@@ -1,15 +1,21 @@
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import select
 import socket
 import struct
 import time
+from datetime import datetime
+
 
 MESSAGE = 'measurement for class project. questions to student cpt15@case.edu or professor mxr136@case.edu'
 PAYLOAD = bytes(MESSAGE + 'a'*(1472 - len(MESSAGE)), 'ascii')
 
 MAX_HOPS = 64
 PROBE_PORT = 33434
-
 MAX_NUM_ATTEMPTS = 3
+DATE_AND_TIME = datetime.now().strftime("%m_%d_%Y__%H_%M_%S")
+
 
 def measure_site(hostname):
     try:
@@ -93,7 +99,7 @@ def main():
     sites = open("targets.txt").read().splitlines()
 
     #Write output to csv file for import into excel
-    file_out = open("output.csv",'w')
+    file_out = open("output/output_" + DATE_AND_TIME + ".csv",'w')
     file_out.write('%s, %s, %s, %s\n' % ("Host", "Num Hops", "RTT", "Number of Original Message Bytes remaining in ICMP error"))
 
     #Loop through all sites
@@ -109,8 +115,15 @@ def main():
             print("\tIPs Match: " + str(ip_match))
             print("\tPorts Match: " + str(port_match))
             file_out.write('%s, %d, %f, %d\n' % (site, hops, rtt, rem_bytes))
+            plt.scatter(hops, rtt, label=site, s=20.0)
         else:
             print("\tUnable to reach site.")
+
+        plt.xlabel("Hops")
+        plt.ylabel("RTT (ms)")
+        plt.title("Correlation of Hops vs. RTT")
+        plt.legend(fontsize='x-small')
+        plt.savefig("output/correlation_" + DATE_AND_TIME + ".png")
     exit()
 
 
