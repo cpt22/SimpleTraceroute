@@ -48,8 +48,10 @@ def measure_site(hostname):
 
     while not (ip_match or port_match) and num_attempts < MAX_NUM_ATTEMPTS:
         try:
+            # receive the packet
             recv_packet, address = recv_sock.recvfrom(1500)
 
+            # Set the time the packet is received
             time_received = time.perf_counter()
 
             # Calculate the remaining length of the payload in the received packet
@@ -84,8 +86,10 @@ def measure_site(hostname):
                 return num_hops, float(rtt*1000), ip_match, port_match, original_packet_remaining_payload_length
 
         except socket.error:
+            # Increase the number of attempts made
             num_attempts += 1
             print("\tUnable to reach host: " + hostname + " --> Trying " + str(MAX_NUM_ATTEMPTS-num_attempts) + " more times.")
+            # Reset timer and resend packet
             time_sent = time.perf_counter()
             send_sock.sendto(PAYLOAD, (dest_address, PROBE_PORT))
 
@@ -100,7 +104,7 @@ def main():
 
     #Write output to csv file for import into excel
     file_out = open("output/output_" + DATE_AND_TIME + ".csv",'w')
-    file_out.write('%s, %s, %s, %s\n' % ("Host", "Num Hops", "RTT", "Number of Original Message Bytes remaining in ICMP error"))
+    file_out.write('%s, %s, %s, %s, %s, %s, %s\n' % ("Host", "IP Match", "Port Match", "Num Hops", "RTT", "Number of Original Message Bytes remaining in ICMP error", "Number of bytes remaining including headers"))
 
     #Loop through all sites
     for site in sites:
@@ -111,14 +115,19 @@ def main():
             print("\tRTT (msec): " + str(rtt))
             # This is the number of bytes remaining of the original datagram PAYLOAD (so the contents of the PAYLOAD variable above) which
             # Does not include the IP or UDP headers
-            print("\tBytes of original datagram payload remaining: " + str(rem_bytes))
+            print("\tBytes of original datagram payload remaining (no headers): " + str(rem_bytes))
+            print("\tBytes of original datagram remaining (including orig headers): " + str(rem_bytes + 28))
             print("\tIPs Match: " + str(ip_match))
             print("\tPorts Match: " + str(port_match))
-            file_out.write('%s, %d, %f, %d\n' % (site, hops, rtt, rem_bytes))
+            # Write values to CSV file
+            file_out.write('%s, %s, %s, %d, %f, %d, %d\n' % (site, ip_match, port_match, hops, rtt, rem_bytes, (rem_bytes + 28)))
+
+            # Add values for this site to the plot
             plt.scatter(hops, rtt, label=site, s=20.0)
         else:
             print("\tUnable to reach site.")
 
+        # Setup the output plot
         plt.xlabel("Hops")
         plt.ylabel("RTT (ms)")
         plt.title("Correlation of Hops vs. RTT")
