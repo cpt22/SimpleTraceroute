@@ -33,6 +33,7 @@ def measure_site(hostname):
     timeout = struct.pack("ll", 5, 0)
     recv_sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
     recv_sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    # Set timeout on receive socket
     recv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, timeout)
     recv_sock.bind(('', PROBE_PORT))
 
@@ -57,6 +58,7 @@ def measure_site(hostname):
             # Calculate the remaining length of the payload in the received packet
             icmp_ip_header = struct.unpack('!BBHHHBBH4s4s', recv_packet[0:20])
             icmp_packet_length = icmp_ip_header[2]
+            # HERE IS WHERE REMAINING BYTES ARE CALCULATED FOR 425 PART
             original_packet_remaining_payload_length = icmp_packet_length - 56
 
             # Unpack the ip header contained within the icmp packet payload
